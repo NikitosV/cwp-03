@@ -1,0 +1,18 @@
+[
+  {
+    "quest": "Do you like Tesla?",
+    "good": "1"
+  },
+  {
+    "quest": "Client, you are hear me?",
+    "good": "1"
+  },
+  {
+    "quest" : "Do you know NodeJS?",
+    "good" : "0"
+  },
+  {
+    "quest" : "Do you love C++?",
+    "good" : "0"
+  }
+]
