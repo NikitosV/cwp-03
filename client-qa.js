@@ -5,6 +5,7 @@ const port = 8124;
 const string = 'QA';
 const bad = 'DEC';
 const good = 'ACK';
+const reqFiles = 'FILES';
 
 const clientQa = new net.Socket();
 let currentIndex = -1;
