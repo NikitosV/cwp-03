@@ -1,47 +1,123 @@
-// server.js
-const net = require('net'); // подключаем net
-const fs = require('fs');   // подключаем fs
-const port = 8124;          // константа содержащая порт 8124
-const clientString = 'QA';
-const good = 'ACK';
-const bad = 'DEC';
-const logger = fs.createWriteStream('client_id.log');   // создание файла log
-let seed = 0;      // инициализируем сид
+const net = require("net");
+const fs = require("fs");
+const path = require("path");
+const port = 8124;
+let seed = 0;
 
-const server = net.createServer((client) => {   // создаем сервер
-    console.log('Client connected');
-    client.setEncoding('utf8');
+const reqFiles = 'FILES';
+const reqQA = 'QA';
+const resGood = 'ACK';
+const resBad = 'DEC';
+const resFiles = 'NEXT';
+const defaultDir = 'D:\\Proj\\NodeJS\\cwp-03\\undefined\\'; //process.env.DEF_DIR ||
+const maxConn = parseInt(process.env.MAX_CONN);
 
-    client.on('data', (data, err) =>
-    {
-        if (err) console.error(err);
-        else if (!err && data === clientString)
-        {
-            client.id = Date.now() + seed++;
-            writeLog('Client #' + client.id + ' connected\n');
-            client.write(data === clientString ? good : bad);
+let files = [];
+let clients = [];
+let flag = 0;
+let connections = 0;
+
+let QA;
+let ans;
+const server = net.createServer((client) => {
+    client.setEncoding("utf8");
+    client.id = seed++;
+    console.log("Client connected, ID = " + client.id);
+    if (++connections === maxConn) {
+        client.write(resBad)
+        client.destroy();
+    }
+    let log = client.id + ".txt";
+    client.on("data", (data) => {
+        if (data === reqQA || data === reqFiles) {
+            clients[client.id] = data;
+            fs.readFile("qa.json", (err, data) => {
+                if (err) {
+                    console.log("Error read qa.json");
+                    client.destroy();
+                } else {
+                    QA = JSON.parse(data);
+                    fs.appendFile(log, "Connected new client: ID - " + client.id + "\n", (err) => {
+                        if (err) {
+                            console.log("Error append in file");
+                        }
+                    });
+                }
+            });
+            if (data === reqFiles) {
+                files[client.id] = [];
+                fs.mkdir(defaultDir + path.sep + client.id, (err) => {
+                    console.log(err);
+                });
+                fs.appendFile(log, "Making dir for client files\nStarting accept files\n", (err) => {
+                    if (err) {
+                        console.log("Error append in file");
+                    }
+                });
+            }
+            client.write(resGood);
+        } else if (client.id === undefined) {
+            client.write(resBad);
+            client.destroy();
         }
-        else if (!err && data !== clientString) {
-            writeLog('Client #' + client.id + ' has asked: ' + data + '\n');
-            let answer = generateAnswer();
-            writeLog('Server answered to Client #' + client.id + ': ' + answer + '\n');
-            client.write(answer);
+
+        if (clients[client.id] === reqQA && data !== reqQA) {
+            //client.write("DEC");
+            console.log(client.id + " data: " + data);
+            ans = getRandomAnswer();
+            client.write(ans);
+            fs.appendFile(log, "New QA - " + data + "\nServer answer - " + ans + "\n", (err) => {
+                if (err) {
+                    console.log("Error append in file");
+                }
+            });
+            console.log("Server answer " + ans);
         }
+        if (clients[client.id] === reqFiles && data !== reqFiles) {
+            files[client.id].push(data);
+            flag++;
+            if (flag === 2) {
+                let buf = Buffer.from(files[client.id][0], 'hex');
+                let filePath = defaultDir + path.sep + client.id + path.sep + files[client.id][1];
+                fs.appendFile(log, "Creating file " + filePath + "\n", (err) => {
+                    if (err) {
+                        console.log("Error append in file");
+                    }
+                });
+                console.log(filePath);
+                fil = fs.createWriteStream(filePath);
+                fil.write(buf);
+                fs.appendFile(log, "Writing into file " + filePath + "\n", (err) => {
+                    if (err) {
+                        console.log("Error append in file");
+                    }
+                });
+                flag = 0;
+                files[client.id] = [];
+                fil.close();
+                client.write(resFiles);
+            }
+            //client.write("Hello from server");
+        }
+
+
     });
-    client.on('end', () =>
-    {
-        logger.write('Client #'+ client.id+ ' disconnected');
-        console.log('Client disconnected')
+    client.on("end", () => {
+        connections--;
+        console.log("Client disconected, ID = " + client.id);
+        fs.appendFile(log, "client disconected\n", (err) => {
+            if (err) {
+                console.log("Error append in file");
+            }
+        });
     });
 });
-function writeLog(data)
-{
-    logger.write(data);
-}
-function generateAnswer()
-{
+
+server.listen(port, () => {
+    console.log("listenning");
+});
+
+
+function getRandomAnswer() {
     return Math.random() > 0.5 ? '1' : '0';
 }
-server.listen(port, () => {
-    console.log(`Server listening on localhost: ${port}`);
-});

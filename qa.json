@@ -1,18 +1,17 @@
-[
+[{
+  "qa": "How are you ?",
+  "goodAnsBad": ["Ivan", "Petrov"]
+},
   {
-    "quest": "Do you like Tesla?",
-    "good": "1"
+    "qa": "How old are you ?",
+    "goodAnsBad": ["19", "20"]
   },
   {
-    "quest": "Client, you are hear me?",
-    "good": "1"
+    "qa": "Where are you from ?",
+    "goodAnsBad": ["Pinsk", "Minsk"]
   },
   {
-    "quest" : "Do you know NodeJS?",
-    "good" : "0"
-  },
-  {
-    "quest" : "Do you love C++?",
-    "good" : "0"
+    "qa": "Do you like ice-cream ?",
+    "goodAnsBad": ["Yes", "No"]
   }
 ]
